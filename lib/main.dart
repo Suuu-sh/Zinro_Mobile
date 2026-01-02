@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/game_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/player_count_screen.dart';
+import 'screens/results_screen.dart';
 import 'screens/role_reveal_screen.dart';
 import 'screens/role_settings_screen.dart';
 
@@ -42,6 +43,7 @@ class ZinroApp extends StatelessWidget {
         RoleSettingsScreen.routeName: (context) => const RoleSettingsScreen(),
         RoleRevealScreen.routeName: (context) => const RoleRevealScreen(),
         GameScreen.routeName: (context) => const GameScreen(),
+        ResultsScreen.routeName: (context) => const ResultsScreen(),
       },
       initialRoute: HomeScreen.routeName,
     );

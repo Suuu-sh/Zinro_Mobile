@@ -20,7 +20,7 @@ class HomeScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                '人狼ゲーム',
+                '神狼ゲーム',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

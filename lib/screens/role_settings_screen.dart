@@ -21,9 +21,10 @@ class RoleSettingsScreen extends StatefulWidget {
 class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
   bool _initialized = false;
   late int _playerCount;
-  late int _werewolf;
-  late int _seer;
-  late int _guardian;
+  late int _fenrir;
+  late int _observerGod;
+  late int _guardianGod;
+  late int _mediumGod;
 
   @override
   void didChangeDependencies() {
@@ -32,39 +33,44 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
     final args =
         ModalRoute.of(context)?.settings.arguments as RoleSettingsArgs?;
     _playerCount = args?.playerCount ?? 6;
-    final defaultWerewolf =
-        (_playerCount / 4).round().clamp(1, 3).toInt();
-    _werewolf = defaultWerewolf;
-    _seer = 1;
-    _guardian = _playerCount >= 7 ? 1 : 0;
+    final defaultFenrir = (_playerCount / 4).round().clamp(1, 3).toInt();
+    _fenrir = defaultFenrir;
+    _observerGod = 1;
+    _guardianGod = 1;
+    _mediumGod = 1;
     _normalizeRoles();
     _initialized = true;
   }
 
-  int get _specialTotal => _werewolf + _seer + _guardian;
+  int get _specialTotal => _fenrir + _observerGod + _guardianGod + _mediumGod;
 
-  int get _villager =>
+  int get _normalGod =>
       (_playerCount - _specialTotal).clamp(0, _playerCount).toInt();
 
-  bool get _isValid => _specialTotal <= _playerCount && _werewolf >= 1;
+  bool get _isValid => _specialTotal <= _playerCount && _fenrir >= 1;
 
   void _normalizeRoles() {
     var overflow = _specialTotal - _playerCount;
     if (overflow <= 0) return;
 
-    if (_guardian > 0) {
-      final reduced = _guardian.clamp(0, overflow).toInt();
-      _guardian -= reduced;
+    if (_mediumGod > 0) {
+      final reduced = _mediumGod.clamp(0, overflow).toInt();
+      _mediumGod -= reduced;
       overflow -= reduced;
     }
-    if (overflow > 0 && _seer > 0) {
-      final reduced = _seer.clamp(0, overflow).toInt();
-      _seer -= reduced;
+    if (overflow > 0 && _guardianGod > 0) {
+      final reduced = _guardianGod.clamp(0, overflow).toInt();
+      _guardianGod -= reduced;
       overflow -= reduced;
     }
-    if (overflow > 0 && _werewolf > 1) {
-      final reduced = (_werewolf - 1).clamp(0, overflow).toInt();
-      _werewolf -= reduced;
+    if (overflow > 0 && _observerGod > 0) {
+      final reduced = _observerGod.clamp(0, overflow).toInt();
+      _observerGod -= reduced;
+      overflow -= reduced;
+    }
+    if (overflow > 0 && _fenrir > 1) {
+      final reduced = (_fenrir - 1).clamp(0, overflow).toInt();
+      _fenrir -= reduced;
       overflow -= reduced;
     }
   }
@@ -72,14 +78,19 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
   void _changeRole(String role, int delta) {
     setState(() {
       switch (role) {
-        case 'werewolf':
-          _werewolf = (_werewolf + delta).clamp(1, _playerCount).toInt();
+        case 'fenrir':
+          _fenrir = (_fenrir + delta).clamp(1, _playerCount).toInt();
           break;
-        case 'seer':
-          _seer = (_seer + delta).clamp(0, _playerCount).toInt();
+        case 'observer':
+          _observerGod =
+              (_observerGod + delta).clamp(0, _playerCount).toInt();
           break;
         case 'guardian':
-          _guardian = (_guardian + delta).clamp(0, _playerCount).toInt();
+          _guardianGod =
+              (_guardianGod + delta).clamp(0, _playerCount).toInt();
+          break;
+        case 'medium':
+          _mediumGod = (_mediumGod + delta).clamp(0, _playerCount).toInt();
           break;
       }
       _normalizeRoles();
@@ -109,7 +120,7 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              '役職の人数を調整してください。\n残りは村人になります。',
+              '役職の人数を調整してください。\n残りは普通神になります。',
               style: TextStyle(
                 fontSize: 13,
                 color: Color(0xFF4A5A59),
@@ -118,33 +129,41 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
             ),
             const SizedBox(height: 20),
             _RoleRow(
-              label: '人狼',
+              label: '神狼（フェンリル）',
               description: '夜に襲撃を行う',
-              count: _werewolf,
-              onMinus: () => _changeRole('werewolf', -1),
-              onPlus: () => _changeRole('werewolf', 1),
+              count: _fenrir,
+              onMinus: () => _changeRole('fenrir', -1),
+              onPlus: () => _changeRole('fenrir', 1),
             ),
             const SizedBox(height: 12),
             _RoleRow(
-              label: '占い師',
-              description: '夜に正体を占う',
-              count: _seer,
-              onMinus: () => _changeRole('seer', -1),
-              onPlus: () => _changeRole('seer', 1),
+              label: '観測神',
+              description: '夜に生存している神の役職を確認',
+              count: _observerGod,
+              onMinus: () => _changeRole('observer', -1),
+              onPlus: () => _changeRole('observer', 1),
             ),
             const SizedBox(height: 12),
             _RoleRow(
-              label: '騎士',
-              description: '夜に守る',
-              count: _guardian,
+              label: '守護神',
+              description: '夜に襲撃を無効化',
+              count: _guardianGod,
               onMinus: () => _changeRole('guardian', -1),
               onPlus: () => _changeRole('guardian', 1),
             ),
             const SizedBox(height: 12),
+            _RoleRow(
+              label: '霊媒神',
+              description: '夜に死亡済みの神の役職を確認',
+              count: _mediumGod,
+              onMinus: () => _changeRole('medium', -1),
+              onPlus: () => _changeRole('medium', 1),
+            ),
+            const SizedBox(height: 12),
             _StaticRoleRow(
-              label: '村人',
-              description: '特別な能力なし',
-              count: _villager,
+              label: '普通神',
+              description: '能力なし',
+              count: _normalGod,
             ),
             const SizedBox(height: 12),
             if (remaining < 0)
@@ -164,10 +183,11 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
                 onPressed: _isValid
                     ? () {
                         final roles = RoleSettings(
-                          werewolf: _werewolf,
-                          seer: _seer,
-                          guardian: _guardian,
-                          villager: _villager,
+                          fenrir: _fenrir,
+                          observerGod: _observerGod,
+                          guardianGod: _guardianGod,
+                          mediumGod: _mediumGod,
+                          normalGod: _normalGod,
                         );
                         Navigator.of(context).pushNamed(
                           RoleRevealScreen.routeName,

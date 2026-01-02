@@ -1,29 +1,34 @@
 class RoleSettings {
   const RoleSettings({
-    required this.werewolf,
-    required this.seer,
-    required this.guardian,
-    required this.villager,
+    required this.fenrir,
+    required this.observerGod,
+    required this.guardianGod,
+    required this.mediumGod,
+    required this.normalGod,
   });
 
-  final int werewolf;
-  final int seer;
-  final int guardian;
-  final int villager;
+  final int fenrir;
+  final int observerGod;
+  final int guardianGod;
+  final int mediumGod;
+  final int normalGod;
 
-  int get total => werewolf + seer + guardian + villager;
+  int get total =>
+      fenrir + observerGod + guardianGod + mediumGod + normalGod;
 
   RoleSettings copyWith({
-    int? werewolf,
-    int? seer,
-    int? guardian,
-    int? villager,
+    int? fenrir,
+    int? observerGod,
+    int? guardianGod,
+    int? mediumGod,
+    int? normalGod,
   }) {
     return RoleSettings(
-      werewolf: werewolf ?? this.werewolf,
-      seer: seer ?? this.seer,
-      guardian: guardian ?? this.guardian,
-      villager: villager ?? this.villager,
+      fenrir: fenrir ?? this.fenrir,
+      observerGod: observerGod ?? this.observerGod,
+      guardianGod: guardianGod ?? this.guardianGod,
+      mediumGod: mediumGod ?? this.mediumGod,
+      normalGod: normalGod ?? this.normalGod,
     );
   }
 }
@@ -42,24 +47,20 @@ class GameSetup {
   const GameSetup({
     required this.settings,
     required this.assignedRoles,
-    required this.initialActions,
   });
 
   final GameSettings settings;
   final List<String> assignedRoles;
-  final List<AbilityAction> initialActions;
 }
 
-class AbilityAction {
-  const AbilityAction({
-    required this.day,
-    required this.actorIndex,
-    required this.role,
-    required this.targetIndex,
+class GameResult {
+  const GameResult({
+    required this.settings,
+    required this.assignedRoles,
+    required this.winner,
   });
 
-  final int day;
-  final int actorIndex;
-  final String role;
-  final int targetIndex;
+  final GameSettings settings;
+  final List<String> assignedRoles;
+  final String winner;
 }
