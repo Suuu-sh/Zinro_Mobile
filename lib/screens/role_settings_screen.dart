@@ -25,6 +25,7 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
   late int _observerGod;
   late int _guardianGod;
   late int _mediumGod;
+  late int _normalGod;
 
   @override
   void didChangeDependencies() {
@@ -33,47 +34,20 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
     final args =
         ModalRoute.of(context)?.settings.arguments as RoleSettingsArgs?;
     _playerCount = args?.playerCount ?? 6;
-    final defaultFenrir = (_playerCount / 4).round().clamp(1, 3).toInt();
-    _fenrir = defaultFenrir;
+    _fenrir = (_playerCount / 4).round().clamp(1, 3).toInt();
     _observerGod = 1;
     _guardianGod = 1;
     _mediumGod = 1;
-    _normalizeRoles();
+    final assignedTotal =
+        _fenrir + _observerGod + _guardianGod + _mediumGod;
+    _normalGod = (_playerCount - assignedTotal).clamp(0, _playerCount).toInt();
     _initialized = true;
   }
 
-  int get _specialTotal => _fenrir + _observerGod + _guardianGod + _mediumGod;
+  int get _total =>
+      _fenrir + _observerGod + _guardianGod + _mediumGod + _normalGod;
 
-  int get _normalGod =>
-      (_playerCount - _specialTotal).clamp(0, _playerCount).toInt();
-
-  bool get _isValid => _specialTotal <= _playerCount && _fenrir >= 1;
-
-  void _normalizeRoles() {
-    var overflow = _specialTotal - _playerCount;
-    if (overflow <= 0) return;
-
-    if (_mediumGod > 0) {
-      final reduced = _mediumGod.clamp(0, overflow).toInt();
-      _mediumGod -= reduced;
-      overflow -= reduced;
-    }
-    if (overflow > 0 && _guardianGod > 0) {
-      final reduced = _guardianGod.clamp(0, overflow).toInt();
-      _guardianGod -= reduced;
-      overflow -= reduced;
-    }
-    if (overflow > 0 && _observerGod > 0) {
-      final reduced = _observerGod.clamp(0, overflow).toInt();
-      _observerGod -= reduced;
-      overflow -= reduced;
-    }
-    if (overflow > 0 && _fenrir > 1) {
-      final reduced = (_fenrir - 1).clamp(0, overflow).toInt();
-      _fenrir -= reduced;
-      overflow -= reduced;
-    }
-  }
+  bool get _isValid => _total == _playerCount && _fenrir >= 1;
 
   void _changeRole(String role, int delta) {
     setState(() {
@@ -92,15 +66,15 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
         case 'medium':
           _mediumGod = (_mediumGod + delta).clamp(0, _playerCount).toInt();
           break;
+        case 'normal':
+          _normalGod = (_normalGod + delta).clamp(0, _playerCount).toInt();
+          break;
       }
-      _normalizeRoles();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final remaining = _playerCount - _specialTotal;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('役職設定'),
@@ -120,7 +94,7 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              '役職の人数を調整してください。\n残りは普通神になります。',
+              '役職の人数を調整してください。\n合計が人数と一致するようにしてください。',
               style: TextStyle(
                 fontSize: 13,
                 color: Color(0xFF4A5A59),
@@ -164,17 +138,19 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
               label: '普通神',
               description: '能力なし',
               count: _normalGod,
+              onMinus: () => _changeRole('normal', -1),
+              onPlus: () => _changeRole('normal', 1),
             ),
             const SizedBox(height: 12),
-            if (remaining < 0)
+            Text(
+              '合計: $_total / $_playerCount',
+              style: const TextStyle(color: Color(0xFF2F9C95)),
+            ),
+            const SizedBox(height: 8),
+            if (_total != _playerCount)
               const Text(
-                '役職の合計が人数を超えています。',
+                '役職の合計が人数と一致していません。',
                 style: TextStyle(color: Color(0xFFE37064)),
-              )
-            else
-              Text(
-                '残り: $remaining 人',
-                style: const TextStyle(color: Color(0xFF2F9C95)),
               ),
             const Spacer(),
             SizedBox(
@@ -290,11 +266,15 @@ class _StaticRoleRow extends StatelessWidget {
     required this.label,
     required this.description,
     required this.count,
+    required this.onMinus,
+    required this.onPlus,
   });
 
   final String label;
   final String description;
   final int count;
+  final VoidCallback onMinus;
+  final VoidCallback onPlus;
 
   @override
   Widget build(BuildContext context) {
@@ -329,12 +309,20 @@ class _StaticRoleRow extends StatelessWidget {
               ],
             ),
           ),
+          IconButton(
+            onPressed: onMinus,
+            icon: const Icon(Icons.remove_circle_outline),
+          ),
           Text(
             '$count',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
             ),
+          ),
+          IconButton(
+            onPressed: onPlus,
+            icon: const Icon(Icons.add_circle_outline),
           ),
         ],
       ),

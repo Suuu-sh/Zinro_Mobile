@@ -12,7 +12,7 @@ class PlayerCountScreen extends StatefulWidget {
 }
 
 class _PlayerCountScreenState extends State<PlayerCountScreen> {
-  static const int _minPlayers = 6;
+  static const int _minPlayers = 5;
   static const int _maxPlayers = 12;
 
   int _playerCount = 6;
