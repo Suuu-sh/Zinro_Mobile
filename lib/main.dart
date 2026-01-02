@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'screens/game_screen.dart';
 import 'screens/home_screen.dart';
@@ -8,6 +9,11 @@ import 'screens/role_reveal_screen.dart';
 import 'screens/role_settings_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   runApp(const ZinroApp());
 }
 
@@ -17,25 +23,16 @@ class ZinroApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Zinro',
+      title: '神狼ゲーム',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2F9C95),
-          brightness: Brightness.light,
+          seedColor: const Color(0xFFe94560),
+          brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF6F3ED),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF6F3ED),
-          elevation: 0,
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            color: Color(0xFF0E1B1A),
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
+        scaffoldBackgroundColor: const Color(0xFF0a0e27),
+        fontFamily: 'NotoSansJP',
       ),
       routes: {
         HomeScreen.routeName: (context) => const HomeScreen(),

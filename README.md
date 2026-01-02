@@ -1,17 +1,78 @@
-# mobile
+# 神狼ゲーム モバイルアプリ (Flutter)
 
-A new Flutter project.
+オンラインマルチプレイヤー対応の神狼ゲームアプリです。
 
-## Getting Started
+## 特徴
 
-This project is a starting point for a Flutter application.
+- 🎮 **オンラインマルチプレイヤー**: リアルタイムで友達と遊べる
+- 📱 **オフラインモード**: 1台のスマホで順番に回して遊べる
+- 🎨 **美しいUI**: グラデーションとアニメーションで洗練されたデザイン
+- 🐺 **神狼システム**: 占い結果が市民と出る特殊な人狼
 
-A few resources to get you started if this is your first Flutter project:
+## セットアップ
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 1. 依存関係のインストール
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# Zinro_Mobile
+```bash
+cd Mobile
+flutter pub get
+```
+
+### 2. バックエンドサーバーの起動
+
+```bash
+cd Backend
+npm install
+npm start
+```
+
+### 3. サーバーURLの設定
+
+`Mobile/lib/services/socket_service.dart`の`serverUrl`を変更してください：
+
+```dart
+// ローカルネットワークの場合
+static const String serverUrl = 'http://192.168.x.x:3000';
+
+// localhost（エミュレータの場合）
+static const String serverUrl = 'http://10.0.2.2:3000'; // Android
+static const String serverUrl = 'http://localhost:3000'; // iOS
+```
+
+### 4. アプリの起動
+
+```bash
+flutter run
+```
+
+## 役職
+
+- **市民**: 特殊能力なし
+- **神占い師**: 毎晩1人を占い、人狼か否かを判定
+- **観測神騎士**: 毎晩1人を観測し、夜に行動したかを判定
+- **守護神**: 毎晩1人を守り、襲撃から保護
+- **人狼**: 毎晩1人を襲撃
+- **神狼**: 占い結果が市民と出る特殊な人狼
+
+## ゲームフロー
+
+1. **ルーム作成/参加**: プレイヤー名を入力してルームを作成、または6桁のルームIDで参加
+2. **ロビー**: 6人以上集まったらゲーム開始
+3. **役職配布**: 各プレイヤーに役職が割り当てられる
+4. **夜フェーズ**: 各役職が能力を使用
+5. **昼フェーズ**: 議論
+6. **投票フェーズ**: 処刑する人を投票
+7. **勝利判定**: 人狼が全滅で村人陣営の勝利、人狼が村人以上で人狼陣営の勝利
+
+## 使用技術
+
+- **Flutter**: モバイルアプリフレームワーク
+- **Socket.IO**: リアルタイム通信
+- **Google Fonts**: フォント
+- **Flutter Animate**: アニメーション
+
+## 注意事項
+
+- オンラインモードは6〜8人で遊べます
+- 同じネットワーク内でプレイする場合は、バックエンドサーバーのIPアドレスを設定してください
+- オフラインモードは既存の機能で、1台のスマホを回して遊びます

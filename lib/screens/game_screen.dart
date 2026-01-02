@@ -398,108 +398,136 @@ class _GameScreenState extends State<GameScreen> {
         _phase == GamePhase.nightAction ? _day + 1 : _day;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ゲーム進行'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _PhaseCard(
-              phaseLabel: _phaseLabel,
-              hint: _phaseHint,
-              day: displayDay,
-            ),
-            const SizedBox(height: 16),
-            _SettingsSummary(settings: _settings),
-            const SizedBox(height: 16),
-            if (_phase == GamePhase.discussion) ...[
-              _InfoCard(text: _nightReport),
-              const SizedBox(height: 12),
-              const Text(
-                '生存プレイヤー',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0E1B1A),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: _players.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    return _PlayerTile(player: _players[index]);
-                  },
-                ),
-              ),
-            ] else if (_phase == GamePhase.nightAction) ...[
-              _NightActionPanel(
-                day: _day + 1,
-                playerIndex: _currentNightPlayerIndex,
-                player: _currentNightPlayer,
-                players: _players,
-                selectedTarget: _nightTargets[_currentNightPlayerIndex],
-                onTargetChanged: (value) {
-                  setState(() {
-                    _nightTargets[_currentNightPlayerIndex] = value;
-                    _observerResultRevealed = false;
-                  });
-                },
-                isFinalFenrir: _isFinalFenrir(_currentNightPlayerIndex),
-                suggestions: _fenrirSuggestions(_currentNightPlayerIndex),
-                effectiveRoleLabel: _effectiveRoleLabel,
-                hasDeadPlayers: _hasDeadPlayers,
-                observerResultRevealed: _observerResultRevealed,
-                onObserverReveal: () {
-                  setState(() {
-                    _observerResultRevealed = true;
-                  });
-                },
-              ),
-            ] else if (_phase == GamePhase.voting) ...[
-              _VotePanel(
-                day: _day,
-                voterIndex: _currentVoterIndex,
-                players: _players,
-                selectedTarget: _votes[_currentVoterIndex],
-                onTargetChanged: (value) {
-                  setState(() {
-                    _votes[_currentVoterIndex] = value;
-                  });
-                },
-              ),
-            ] else if (_phase == GamePhase.dayEnd) ...[
-              _InfoCard(text: _lastExecution),
-              const SizedBox(height: 12),
-              _InfoCard(text: _nightReport),
-              const Spacer(),
-            ] else if (_phase == GamePhase.gameOver) ...[
-              _InfoCard(text: _winner),
-              const Spacer(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0a0e27),
+              Color(0xFF16213e),
+              Color(0xFF1a1a2e),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _phase == GamePhase.nightAction && !_canAdvanceNight
-                    ? null
-                    : _phase == GamePhase.voting && !_canAdvanceVote
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _PhaseCard(
+                  phaseLabel: _phaseLabel,
+                  hint: _phaseHint,
+                  day: displayDay,
+                ),
+                const SizedBox(height: 16),
+                _SettingsSummary(settings: _settings),
+                const SizedBox(height: 16),
+                if (_phase == GamePhase.discussion) ...[
+                  _InfoCard(text: _nightReport),
+                  const SizedBox(height: 12),
+                  Text(
+                    '生存プレイヤー',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: _players.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        return _PlayerTile(player: _players[index]);
+                      },
+                    ),
+                  ),
+                ] else if (_phase == GamePhase.nightAction) ...[
+                  _NightActionPanel(
+                    day: _day + 1,
+                    playerIndex: _currentNightPlayerIndex,
+                    player: _currentNightPlayer,
+                    players: _players,
+                    selectedTarget: _nightTargets[_currentNightPlayerIndex],
+                    onTargetChanged: (value) {
+                      setState(() {
+                        _nightTargets[_currentNightPlayerIndex] = value;
+                        _observerResultRevealed = false;
+                      });
+                    },
+                    isFinalFenrir: _isFinalFenrir(_currentNightPlayerIndex),
+                    suggestions: _fenrirSuggestions(_currentNightPlayerIndex),
+                    effectiveRoleLabel: _effectiveRoleLabel,
+                    hasDeadPlayers: _hasDeadPlayers,
+                    observerResultRevealed: _observerResultRevealed,
+                    onObserverReveal: () {
+                      setState(() {
+                        _observerResultRevealed = true;
+                      });
+                    },
+                  ),
+                ] else if (_phase == GamePhase.voting) ...[
+                  _VotePanel(
+                    day: _day,
+                    voterIndex: _currentVoterIndex,
+                    players: _players,
+                    selectedTarget: _votes[_currentVoterIndex],
+                    onTargetChanged: (value) {
+                      setState(() {
+                        _votes[_currentVoterIndex] = value;
+                      });
+                    },
+                  ),
+                ] else if (_phase == GamePhase.dayEnd) ...[
+                  _InfoCard(text: _lastExecution),
+                  const SizedBox(height: 12),
+                  _InfoCard(text: _nightReport),
+                  const Spacer(),
+                ] else if (_phase == GamePhase.gameOver) ...[
+                  _InfoCard(text: _winner),
+                  const Spacer(),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  height: 64,
+                  child: ElevatedButton(
+                    onPressed: _phase == GamePhase.nightAction && !_canAdvanceNight
                         ? null
-                        : _advancePhase,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: const Color(0xFF2F9C95),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                        : _phase == GamePhase.voting && !_canAdvanceVote
+                            ? null
+                            : _advancePhase,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFe94560),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 8,
+                      shadowColor: const Color(0xFFe94560).withOpacity(0.5),
+                      disabledBackgroundColor: Colors.white.withOpacity(0.1),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _actionLabel,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward, size: 24),
+                      ],
+                    ),
                   ),
                 ),
-                child: Text(_actionLabel),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -536,28 +564,63 @@ class _PhaseCard extends StatelessWidget {
   final String hint;
   final int day;
 
+  IconData get _phaseIcon {
+    if (phaseLabel.contains('議論')) return Icons.forum;
+    if (phaseLabel.contains('役職')) return Icons.nightlight;
+    if (phaseLabel.contains('投票')) return Icons.how_to_vote;
+    if (phaseLabel.contains('終了')) return Icons.bedtime;
+    return Icons.info;
+  }
+
+  Color get _phaseColor {
+    if (phaseLabel.contains('議論')) return const Color(0xFF2196F3);
+    if (phaseLabel.contains('役職')) return const Color(0xFF673AB7);
+    if (phaseLabel.contains('投票')) return const Color(0xFFe94560);
+    if (phaseLabel.contains('終了')) return const Color(0xFF4CAF50);
+    return const Color(0xFF2F9C95);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _phaseColor.withOpacity(0.3),
+            _phaseColor.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _phaseColor.withOpacity(0.5),
+          width: 2,
+        ),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF2F9C95),
+              color: _phaseColor,
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: _phaseColor.withOpacity(0.5),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.dark_mode_outlined,
+            child: Icon(
+              _phaseIcon,
               color: Colors.white,
+              size: 28,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,17 +628,17 @@ class _PhaseCard extends StatelessWidget {
                 Text(
                   '$phaseLabel（$day日目）',
                   style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0E1B1A),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   hint,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF4A5A59),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.8),
                   ),
                 ),
               ],
@@ -597,28 +660,73 @@ class _SettingsSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '役職構成',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF0E1B1A),
-            ),
+          Row(
+            children: [
+              const Icon(Icons.groups, color: Color(0xFFe94560), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '役職構成',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _RoleChip(emoji: '🐺', count: settings.roles.fenrir),
+              _RoleChip(emoji: '👁️', count: settings.roles.observerGod),
+              _RoleChip(emoji: '🛡️', count: settings.roles.guardianGod),
+              _RoleChip(emoji: '🔮', count: settings.roles.mediumGod),
+              _RoleChip(emoji: '⭐', count: settings.roles.normalGod),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleChip extends StatelessWidget {
+  const _RoleChip({required this.emoji, required this.count});
+
+  final String emoji;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 4),
           Text(
-            'フェンリル ${settings.roles.fenrir} / '
-            '観測神 ${settings.roles.observerGod} / '
-            '守護神 ${settings.roles.guardianGod} / '
-            '霊媒神 ${settings.roles.mediumGod} / '
-            '普通神 ${settings.roles.normalGod}',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF4A5A59)),
+            '×$count',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
@@ -633,20 +741,64 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGoodNews = text.contains('なし') || text.contains('処刑なし');
+    final isBadNews = text.contains('死者あり') || text.contains('を処刑');
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF0E1B1A),
+        gradient: LinearGradient(
+          colors: isBadNews
+              ? [
+                  const Color(0xFFe94560).withOpacity(0.3),
+                  const Color(0xFFe94560).withOpacity(0.1),
+                ]
+              : isGoodNews
+                  ? [
+                      const Color(0xFF4CAF50).withOpacity(0.3),
+                      const Color(0xFF4CAF50).withOpacity(0.1),
+                    ]
+                  : [
+                      Colors.white.withOpacity(0.1),
+                      Colors.white.withOpacity(0.05),
+                    ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isBadNews
+              ? const Color(0xFFe94560)
+              : isGoodNews
+                  ? const Color(0xFF4CAF50)
+                  : Colors.white.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isBadNews
+                ? Icons.warning
+                : isGoodNews
+                    ? Icons.check_circle
+                    : Icons.info,
+            color: isBadNews
+                ? const Color(0xFFe94560)
+                : isGoodNews
+                    ? const Color(0xFF4CAF50)
+                    : Colors.white.withOpacity(0.7),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -660,42 +812,74 @@ class _PlayerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        gradient: LinearGradient(
+          colors: player.alive
+              ? [
+                  const Color(0xFF4CAF50).withOpacity(0.2),
+                  const Color(0xFF4CAF50).withOpacity(0.05),
+                ]
+              : [
+                  Colors.white.withOpacity(0.05),
+                  Colors.white.withOpacity(0.02),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: player.alive
+              ? const Color(0xFF4CAF50).withOpacity(0.5)
+              : Colors.white.withOpacity(0.1),
+        ),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: const Color(0xFF2F9C95).withOpacity(0.2),
-            child: Text(
-              player.name.substring(0, 1),
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0E1B1A),
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: player.alive
+                  ? const Color(0xFF4CAF50).withOpacity(0.3)
+                  : Colors.white.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                player.name.substring(0, 1),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               player.name,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0E1B1A),
+                color: Colors.white,
               ),
             ),
           ),
-          Text(
-            player.alive ? '生存' : '脱落',
-            style: TextStyle(
-              fontSize: 12,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
               color: player.alive
-                  ? const Color(0xFF2F9C95)
-                  : const Color(0xFFE37064),
+                  ? const Color(0xFF4CAF50)
+                  : const Color(0xFFe94560),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              player.alive ? '生存' : '脱落',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
