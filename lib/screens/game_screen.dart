@@ -7,10 +7,10 @@ import 'results_screen.dart';
 
 enum GamePhase { discussion, nightAction, voting, dayEnd, gameOver }
 
-const String _roleFenrir = '神狼';
-const String _roleObserverGod = '観測神';
-const String _roleGuardianGod = '守護神';
-const String _roleMediumGod = '霊媒神';
+const String _roleFenrir = '神狼 -フェンリル-';
+const String _roleObserverGod = '知恵神 -ミーミル-';
+const String _roleGuardianGod = '門番神 -ヘイムダル-';
+const String _roleMediumGod = '冥界神 -ヘル-';
 const String _roleNormalGod = '普通神';
 
 class GameScreen extends StatefulWidget {
@@ -33,12 +33,16 @@ class _GameScreenState extends State<GameScreen> {
 
   List<int> _nightOrder = [];
   int _nightIndex = 0;
+  bool _nightHandover = false;
   late List<int?> _nightTargets;
   String _nightReport = '昨夜の結果: なし';
   bool _observerResultRevealed = false;
+  late List<String?> _fenrirAbilityChoice;
+  late List<int?> _fenrirAbilityTargets;
 
   List<int> _voteOrder = [];
   int _voteIndex = 0;
+  bool _voteHandover = false;
   late List<int?> _votes;
   String _lastExecution = '処刑なし';
 
@@ -76,6 +80,8 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
     _nightTargets = List<int?>.filled(_players.length, null);
+    _fenrirAbilityChoice = List<String?>.filled(_players.length, null);
+    _fenrirAbilityTargets = List<int?>.filled(_players.length, null);
     _votes = List<int?>.filled(_players.length, null);
     _initialized = true;
   }
@@ -146,7 +152,28 @@ class _GameScreenState extends State<GameScreen> {
 
   bool get _canAdvanceNight {
     if (_currentNightPlayer.role == _roleFenrir) {
-      return _nightTargets[_currentNightPlayerIndex] != null;
+      final attackSelected = _nightTargets[_currentNightPlayerIndex] != null;
+      if (!attackSelected) return false;
+
+      final abilityRole = _fenrirAbilityChoice[_currentNightPlayerIndex];
+      if (abilityRole == null) return true;
+
+      if (abilityRole == _roleMediumGod) {
+        return true;
+      }
+
+      final abilityTarget = _fenrirAbilityTargets[_currentNightPlayerIndex];
+      if (abilityTarget == null) {
+        return !_hasEligibleAbilityTargetsForFenrir(
+          abilityRole,
+          _currentNightPlayerIndex,
+        );
+      }
+
+      if (abilityRole == _roleObserverGod) {
+        return _observerResultRevealed;
+      }
+      return true;
     }
     if ((_currentNightPlayer.role == _roleObserverGod ||
             _currentNightPlayer.role == _roleGuardianGod ||
@@ -193,8 +220,7 @@ class _GameScreenState extends State<GameScreen> {
               _phase = GamePhase.discussion;
             }
           } else {
-            _nightIndex += 1;
-            _observerResultRevealed = false;
+            _nightHandover = true;
           }
           break;
         case GamePhase.voting:
@@ -207,7 +233,7 @@ class _GameScreenState extends State<GameScreen> {
               _phase = GamePhase.dayEnd;
             }
           } else {
-            _voteIndex += 1;
+            _voteHandover = true;
           }
           break;
         case GamePhase.dayEnd:
@@ -231,13 +257,17 @@ class _GameScreenState extends State<GameScreen> {
   void _startNight() {
     _nightOrder = _aliveIndices;
     _nightIndex = 0;
+    _nightHandover = false;
     _observerResultRevealed = false;
     _nightTargets = List<int?>.filled(_players.length, null);
+    _fenrirAbilityChoice = List<String?>.filled(_players.length, null);
+    _fenrirAbilityTargets = List<int?>.filled(_players.length, null);
   }
 
   void _startVoting() {
     _voteOrder = _aliveIndices;
     _voteIndex = 0;
+    _voteHandover = false;
     _votes = List<int?>.filled(_players.length, null);
   }
 
@@ -247,6 +277,21 @@ class _GameScreenState extends State<GameScreen> {
       .where((e) => e.value.alive)
       .map((e) => e.key)
       .toList();
+
+  void _continueNightAfterHandover() {
+    setState(() {
+      _nightHandover = false;
+      _nightIndex += 1;
+      _observerResultRevealed = false;
+    });
+  }
+
+  void _continueVoteAfterHandover() {
+    setState(() {
+      _voteHandover = false;
+      _voteIndex += 1;
+    });
+  }
 
   void _resolveNight() {
     final fenrirIndices = _nightOrder
@@ -264,12 +309,23 @@ class _GameScreenState extends State<GameScreen> {
     }
 
     int? guardedPlayer;
-    final guardianIndices = _nightOrder
-        .where((index) => _players[index].role == _roleGuardianGod)
-        .toList();
-    if (guardianIndices.isNotEmpty) {
-      final lastGuardian = guardianIndices.last;
-      guardedPlayer = _nightTargets[lastGuardian];
+    final guarders = <int>[];
+    for (final index in _nightOrder) {
+      final player = _players[index];
+      if (player.role == _roleGuardianGod) {
+        guarders.add(index);
+      } else if (player.role == _roleFenrir &&
+          _fenrirAbilityChoice[index] == _roleGuardianGod) {
+        guarders.add(index);
+      }
+    }
+    if (guarders.isNotEmpty) {
+      final lastGuarder = guarders.last;
+      if (_players[lastGuarder].role == _roleGuardianGod) {
+        guardedPlayer = _nightTargets[lastGuarder];
+      } else {
+        guardedPlayer = _fenrirAbilityTargets[lastGuarder];
+      }
     }
 
     var death = false;
@@ -284,8 +340,7 @@ class _GameScreenState extends State<GameScreen> {
             death = false;
             if (finalAttacker != null) {
               final attacker = _players[finalAttacker];
-              attacker.fenrirHasStolenAbility = true;
-              attacker.fenrirAbilityReadyDay = _day + 1;
+              _addStolenAbility(attacker, target.role, _day + 1);
             }
           } else {
             target.alive = false;
@@ -392,6 +447,40 @@ class _GameScreenState extends State<GameScreen> {
     return target.role;
   }
 
+  void _addStolenAbility(_PlayerState attacker, String role, int readyDay) {
+    if (attacker.role != _roleFenrir) return;
+    final existing = attacker.stolenAbilityReadyDay[role];
+    if (existing == null || readyDay < existing) {
+      attacker.stolenAbilityReadyDay[role] = readyDay;
+    }
+  }
+
+  List<String> _readyStolenAbilities(_PlayerState player, int nightNumber) {
+    if (player.role != _roleFenrir) return [];
+    final ready = <String>[];
+    player.stolenAbilityReadyDay.forEach((role, readyDay) {
+      if (readyDay <= nightNumber) {
+        ready.add(role);
+      }
+    });
+    return ready;
+  }
+
+  bool _hasEligibleAbilityTargetsForFenrir(
+    String abilityRole,
+    int currentIndex,
+  ) {
+    if (abilityRole == _roleObserverGod || abilityRole == _roleGuardianGod) {
+      return _players.asMap().entries.any(
+            (entry) => entry.key != currentIndex && entry.value.alive,
+          );
+    }
+    if (abilityRole == _roleMediumGod) {
+      return _players.any((player) => !player.alive);
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final int displayDay =
@@ -445,43 +534,91 @@ class _GameScreenState extends State<GameScreen> {
                       },
                     ),
                   ),
-                ] else if (_phase == GamePhase.nightAction) ...[
-                  _NightActionPanel(
-                    day: _day + 1,
-                    playerIndex: _currentNightPlayerIndex,
-                    player: _currentNightPlayer,
-                    players: _players,
-                    selectedTarget: _nightTargets[_currentNightPlayerIndex],
-                    onTargetChanged: (value) {
-                      setState(() {
-                        _nightTargets[_currentNightPlayerIndex] = value;
-                        _observerResultRevealed = false;
-                      });
-                    },
-                    isFinalFenrir: _isFinalFenrir(_currentNightPlayerIndex),
-                    suggestions: _fenrirSuggestions(_currentNightPlayerIndex),
-                    effectiveRoleLabel: _effectiveRoleLabel,
-                    hasDeadPlayers: _hasDeadPlayers,
-                    observerResultRevealed: _observerResultRevealed,
-                    onObserverReveal: () {
-                      setState(() {
-                        _observerResultRevealed = true;
-                      });
-                    },
-                  ),
-                ] else if (_phase == GamePhase.voting) ...[
-                  _VotePanel(
-                    day: _day,
-                    voterIndex: _currentVoterIndex,
-                    players: _players,
-                    selectedTarget: _votes[_currentVoterIndex],
-                    onTargetChanged: (value) {
-                      setState(() {
-                        _votes[_currentVoterIndex] = value;
-                      });
-                    },
-                  ),
-                ] else if (_phase == GamePhase.dayEnd) ...[
+            ] else if (_phase == GamePhase.nightAction) ...[
+              Expanded(
+                child: _nightHandover
+                    ? _PassDevicePanel(
+                        title: '次の人に渡してください',
+                        subtitle: '役職能力フェーズを続けます',
+                        buttonLabel: '次の人が準備OK',
+                        onContinue: _continueNightAfterHandover,
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _NightActionPanel(
+                          day: _day + 1,
+                          playerIndex: _currentNightPlayerIndex,
+                          player: _currentNightPlayer,
+                          players: _players,
+                          selectedTarget:
+                              _nightTargets[_currentNightPlayerIndex],
+                          onTargetChanged: (value) {
+                            setState(() {
+                              _nightTargets[_currentNightPlayerIndex] = value;
+                              _observerResultRevealed = false;
+                            });
+                          },
+                          isFinalFenrir:
+                              _isFinalFenrir(_currentNightPlayerIndex),
+                          suggestions:
+                              _fenrirSuggestions(_currentNightPlayerIndex),
+                          effectiveRoleLabel: _effectiveRoleLabel,
+                          hasDeadPlayers: _hasDeadPlayers,
+                          observerResultRevealed: _observerResultRevealed,
+                          onObserverReveal: () {
+                            setState(() {
+                              _observerResultRevealed = true;
+                            });
+                          },
+                          fenrirAbilityChoice:
+                              _fenrirAbilityChoice[_currentNightPlayerIndex],
+                          fenrirAbilityTarget:
+                              _fenrirAbilityTargets[_currentNightPlayerIndex],
+                          availableFenrirAbilities: _readyStolenAbilities(
+                            _currentNightPlayer,
+                            _day + 1,
+                          ),
+                          onFenrirAbilityChoiceChanged: (value) {
+                            setState(() {
+                              _fenrirAbilityChoice[_currentNightPlayerIndex] =
+                                  value;
+                              _fenrirAbilityTargets[_currentNightPlayerIndex] =
+                                  null;
+                              _observerResultRevealed = false;
+                            });
+                          },
+                          onFenrirAbilityTargetChanged: (value) {
+                            setState(() {
+                              _fenrirAbilityTargets[_currentNightPlayerIndex] =
+                                  value;
+                              _observerResultRevealed = false;
+                            });
+                          },
+                        ),
+                      ),
+              ),
+            ] else if (_phase == GamePhase.voting) ...[
+              Expanded(
+                child: _voteHandover
+                    ? _PassDevicePanel(
+                        title: '次の人に渡してください',
+                        subtitle: '投票フェーズを続けます',
+                        buttonLabel: '次の人が準備OK',
+                        onContinue: _continueVoteAfterHandover,
+                      )
+                    : _VotePanel(
+                        day: _day,
+                        voterIndex: _currentVoterIndex,
+                        players: _players,
+                        selectedTarget: _votes[_currentVoterIndex],
+                        onTargetChanged: (value) {
+                          setState(() {
+                            _votes[_currentVoterIndex] = value;
+                          });
+                        },
+                      ),
+              ),
+            ] else if (_phase == GamePhase.dayEnd) ...[
                   _InfoCard(text: _lastExecution),
                   const SizedBox(height: 12),
                   _InfoCard(text: _nightReport),
@@ -493,8 +630,10 @@ class _GameScreenState extends State<GameScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 64,
-                  child: ElevatedButton(
-                    onPressed: _phase == GamePhase.nightAction && !_canAdvanceNight
+              child: ElevatedButton(
+                onPressed: _nightHandover || _voteHandover
+                    ? null
+                    : _phase == GamePhase.nightAction && !_canAdvanceNight
                         ? null
                         : _phase == GamePhase.voting && !_canAdvanceVote
                             ? null
@@ -542,15 +681,13 @@ class _PlayerState {
         abilityActive = role == _roleObserverGod ||
             role == _roleGuardianGod ||
             role == _roleMediumGod,
-        fenrirHasStolenAbility = false,
-        fenrirAbilityReadyDay = null;
+        stolenAbilityReadyDay = {};
 
   final String name;
   final String role;
   bool alive;
   bool abilityActive;
-  bool fenrirHasStolenAbility;
-  int? fenrirAbilityReadyDay;
+  Map<String, int> stolenAbilityReadyDay;
 }
 
 class _PhaseCard extends StatelessWidget {
@@ -902,6 +1039,11 @@ class _NightActionPanel extends StatelessWidget {
     required this.hasDeadPlayers,
     required this.observerResultRevealed,
     required this.onObserverReveal,
+    required this.fenrirAbilityChoice,
+    required this.fenrirAbilityTarget,
+    required this.availableFenrirAbilities,
+    required this.onFenrirAbilityChoiceChanged,
+    required this.onFenrirAbilityTargetChanged,
   });
 
   final int day;
@@ -916,6 +1058,11 @@ class _NightActionPanel extends StatelessWidget {
   final bool hasDeadPlayers;
   final bool observerResultRevealed;
   final VoidCallback onObserverReveal;
+  final String? fenrirAbilityChoice;
+  final int? fenrirAbilityTarget;
+  final List<String> availableFenrirAbilities;
+  final ValueChanged<String?> onFenrirAbilityChoiceChanged;
+  final ValueChanged<int?> onFenrirAbilityTargetChanged;
 
   bool get _hasAction {
     if (player.role == _roleFenrir) return true;
@@ -928,6 +1075,15 @@ class _NightActionPanel extends StatelessWidget {
     return false;
   }
 
+  bool get _fenrirUsingObserver =>
+      player.role == _roleFenrir && fenrirAbilityChoice == _roleObserverGod;
+
+  bool get _fenrirUsingGuardian =>
+      player.role == _roleFenrir && fenrirAbilityChoice == _roleGuardianGod;
+
+  bool get _fenrirUsingMedium =>
+      player.role == _roleFenrir && fenrirAbilityChoice == _roleMediumGod;
+
   String get _targetTitle {
     if (player.role == _roleFenrir) {
       return isFinalFenrir ? '襲撃する相手（最終決定）' : '襲撃する相手（提案）';
@@ -938,12 +1094,18 @@ class _NightActionPanel extends StatelessWidget {
     return '対象';
   }
 
+  String get _fenrirAbilityTitle {
+    if (_fenrirUsingObserver) return '奪取能力: 観測';
+    if (_fenrirUsingGuardian) return '奪取能力: 守護';
+    if (_fenrirUsingMedium) return '奪取能力: 霊媒';
+    return '奪取能力';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
           Text(
             'Night$day  プレイヤー${playerIndex + 1}',
             style: const TextStyle(
@@ -984,13 +1146,14 @@ class _NightActionPanel extends StatelessWidget {
                     color: Color(0xFF4A5A59),
                   ),
                 ),
-                if (player.role == _roleFenrir && player.fenrirHasStolenAbility)
+                if (player.role == _roleFenrir &&
+                    player.stolenAbilityReadyDay.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      player.fenrirAbilityReadyDay != null &&
-                              player.fenrirAbilityReadyDay! <= day
-                          ? '奪取した能力: 使用可能（効果は後日追加）'
+                      player.stolenAbilityReadyDay.values.any(
+                              (readyDay) => readyDay <= day)
+                          ? '奪取した能力: 使用可能'
                           : '奪取した能力: 次の夜から使用可能',
                       style: const TextStyle(
                         fontSize: 12,
@@ -1087,8 +1250,8 @@ class _NightActionPanel extends StatelessWidget {
                           ),
                         ),
                         child: const Text('観測する'),
+                        ),
                       ),
-                    ),
                     if (observerResultRevealed)
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
@@ -1113,6 +1276,143 @@ class _NightActionPanel extends StatelessWidget {
                 color: Color(0xFF4A5A59),
               ),
             ),
+          if (player.role == _roleFenrir &&
+              availableFenrirAbilities.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '奪取した能力（1つ選択）',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0E1B1A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  RadioListTile<String?>(
+                    value: null,
+                    groupValue: fenrirAbilityChoice,
+                    onChanged: onFenrirAbilityChoiceChanged,
+                    title: const Text('使用しない'),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  ...availableFenrirAbilities.map(
+                    (role) => RadioListTile<String?>(
+                      value: role,
+                      groupValue: fenrirAbilityChoice,
+                      onChanged: onFenrirAbilityChoiceChanged,
+                      title: Text(role),
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  if (fenrirAbilityChoice != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      _fenrirAbilityTitle,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0E1B1A),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (_fenrirUsingMedium)
+                      if (!hasDeadPlayers)
+                        const Text(
+                          '死者がいないため霊媒結果はありません。',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4A5A59),
+                          ),
+                        )
+                      else
+                        ...players.where((target) => !target.alive).map(
+                              (target) => Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Text(
+                                  '${target.name}: ${effectiveRoleLabel(target)}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF0E1B1A),
+                                  ),
+                                ),
+                              ),
+                            )
+                    else
+                      ...List.generate(players.length, (index) {
+                        final target = players[index];
+                        if (index == playerIndex) return const SizedBox.shrink();
+                        if (!target.alive) return const SizedBox.shrink();
+                        return RadioListTile<int>(
+                          value: index,
+                          groupValue: fenrirAbilityTarget,
+                          onChanged: onFenrirAbilityTargetChanged,
+                          title: Text(target.name),
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                        );
+                      }),
+                    if (_fenrirUsingObserver && fenrirAbilityTarget != null) ...[
+                      const SizedBox(height: 6),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed:
+                              observerResultRevealed ? null : onObserverReveal,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            backgroundColor: const Color(0xFF2F9C95),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('観測する'),
+                        ),
+                      ),
+                      if (observerResultRevealed)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Text(
+                            '結果: ${players[fenrirAbilityTarget!].name} は ${effectiveRoleLabel(players[fenrirAbilityTarget!])}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF0E1B1A),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ],
+          if (player.role == _roleFenrir &&
+              availableFenrirAbilities.isEmpty &&
+              player.stolenAbilityReadyDay.isNotEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Text(
+                '奪取能力はまだ使用できません。',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF4A5A59),
+                ),
+              ),
+            ),
           if (player.role == _roleFenrir && suggestions.isNotEmpty) ...[
             const SizedBox(height: 12),
             _WolfSuggestionList(
@@ -1120,8 +1420,7 @@ class _NightActionPanel extends StatelessWidget {
               isFinalDecider: isFinalFenrir,
             ),
           ],
-        ],
-      ),
+      ],
     );
   }
 }
@@ -1249,6 +1548,92 @@ class _WolfSuggestionList extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PassDevicePanel extends StatelessWidget {
+  const _PassDevicePanel({
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.onContinue,
+  });
+
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.12)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('📱', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 64,
+          child: ElevatedButton(
+            onPressed: onContinue,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFe94560),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 8,
+              shadowColor: const Color(0xFFe94560).withOpacity(0.5),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  buttonLabel,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.check_circle, size: 24),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

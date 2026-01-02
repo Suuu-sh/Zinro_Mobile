@@ -22,7 +22,7 @@ class RoleData {
 
 class RoleDatabase {
   static const fenrir = RoleData(
-    name: '神狼',
+    name: '神狼 -フェンリル-',
     emoji: '🐺',
     description: '神々を滅ぼす邪悪な狼',
     ability: '毎晩、神を一人襲撃できる。能力を持つ神を襲撃すると、その能力を奪える。',
@@ -32,7 +32,7 @@ class RoleDatabase {
   );
 
   static const observerGod = RoleData(
-    name: '観測神',
+    name: '知恵神 -ミーミル-',
     emoji: '👁️',
     description: '全てを見通す神',
     ability: '毎晩、生存している神の役職を確認できる。',
@@ -42,7 +42,7 @@ class RoleDatabase {
   );
 
   static const guardianGod = RoleData(
-    name: '守護神',
+    name: '門番神 -ヘイムダル-',
     emoji: '🛡️',
     description: '仲間を守る盾の神',
     ability: '毎晩、一人の神を守り、神狼の襲撃を無効化できる。',
@@ -52,7 +52,7 @@ class RoleDatabase {
   );
 
   static const mediumGod = RoleData(
-    name: '霊媒神',
+    name: '冥界神 -ヘル-',
     emoji: '🔮',
     description: '死者と対話する神',
     ability: '毎晩、死亡した神の役職を確認できる。',
@@ -73,13 +73,13 @@ class RoleDatabase {
 
   static RoleData getRoleData(String roleName) {
     switch (roleName) {
-      case '神狼':
+      case '神狼 -フェンリル-':
         return fenrir;
-      case '観測神':
+      case '知恵神 -ミーミル-':
         return observerGod;
-      case '守護神':
+      case '門番神 -ヘイムダル-':
         return guardianGod;
-      case '霊媒神':
+      case '冥界神 -ヘル-':
         return mediumGod;
       case '普通神':
         return normalGod;

@@ -22,6 +22,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
   late List<String> _assignedRoles;
   int _currentIndex = 0;
   bool _revealed = false;
+  bool _handover = false;
   late AnimationController _pulseController;
 
   @override
@@ -61,10 +62,10 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
 
   List<String> _buildRoles(GameSettings settings) {
     final roles = <String>[];
-    roles.addAll(List.filled(settings.roles.fenrir, '神狼'));
-    roles.addAll(List.filled(settings.roles.observerGod, '観測神'));
-    roles.addAll(List.filled(settings.roles.guardianGod, '守護神'));
-    roles.addAll(List.filled(settings.roles.mediumGod, '霊媒神'));
+    roles.addAll(List.filled(settings.roles.fenrir, '神狼 -フェンリル-'));
+    roles.addAll(List.filled(settings.roles.observerGod, '知恵神 -ミーミル-'));
+    roles.addAll(List.filled(settings.roles.guardianGod, '門番神 -ヘイムダル-'));
+    roles.addAll(List.filled(settings.roles.mediumGod, '冥界神 -ヘル-'));
     roles.addAll(List.filled(settings.roles.normalGod, '普通神'));
     roles.shuffle(Random());
     return roles;
@@ -76,8 +77,19 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
     });
   }
 
-  void _nextPlayer() {
+  void _prepareHandover() {
     setState(() {
+      _handover = true;
+    });
+  }
+
+  void _advanceAfterHandover(bool isLast) {
+    if (isLast) {
+      _startGame();
+      return;
+    }
+    setState(() {
+      _handover = false;
       _revealed = false;
       _currentIndex += 1;
     });
@@ -115,154 +127,255 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ヘッダー
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+            child: _handover
+                ? _HandoverPanel(
+                    isLast: isLast,
+                    onContinue: () => _advanceAfterHandover(isLast),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ヘッダー
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFe94560),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'プレイヤー ${_currentIndex + 1}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${_currentIndex + 1} / ${_assignedRoles.length}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
                       ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFe94560),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'プレイヤー ${_currentIndex + 1}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline,
+                              color: Color(0xFFe94560),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '他の人に見られないように確認してください',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${_currentIndex + 1} / ${_assignedRoles.length}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Color(0xFFe94560),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
+                      const SizedBox(height: 32),
+                      // 役職カード
                       Expanded(
-                        child: Text(
-                          '他の人に見られないように確認してください',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.8),
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            child: _revealed
+                                ? _RoleCard(roleData: roleData)
+                                : _HiddenCard(
+                                    pulseController: _pulseController,
+                                  ),
                           ),
                         ),
                       ),
+                      const SizedBox(height: 24),
+                      // ボタン
+                      if (!_revealed)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 64,
+                          child: ElevatedButton(
+                            onPressed: _showRole,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFe94560),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 8,
+                              shadowColor:
+                                  const Color(0xFFe94560).withOpacity(0.5),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.visibility, size: 24),
+                                SizedBox(width: 12),
+                                Text(
+                                  '役職を見る',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          height: 64,
+                          child: ElevatedButton(
+                            onPressed: _prepareHandover,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFe94560),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 8,
+                              shadowColor:
+                                  const Color(0xFFe94560).withOpacity(0.5),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  isLast ? 'ゲーム開始へ' : '次の人へ',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Icon(
+                                  isLast
+                                      ? Icons.play_arrow
+                                      : Icons.arrow_forward,
+                                  size: 24,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HandoverPanel extends StatelessWidget {
+  const _HandoverPanel({
+    required this.isLast,
+    required this.onContinue,
+  });
+
+  final bool isLast;
+  final VoidCallback onContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.12)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '📱',
+                style: TextStyle(fontSize: 48),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isLast ? '準備ができたら開始' : '次の人に渡してください',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 32),
-                // 役職カード
-                Expanded(
-                  child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      child: _revealed
-                          ? _RoleCard(roleData: roleData)
-                          : _HiddenCard(pulseController: _pulseController),
-                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                isLast
+                    ? '全員の確認が終わったら開始します'
+                    : '次のプレイヤーが確認できる状態にしてください',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 64,
+          child: ElevatedButton(
+            onPressed: onContinue,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFe94560),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 8,
+              shadowColor: const Color(0xFFe94560).withOpacity(0.5),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  isLast ? 'ゲーム開始' : '次の人が準備OK',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 24),
-                // ボタン
-                if (!_revealed)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      onPressed: _showRole,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFe94560),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 8,
-                        shadowColor: const Color(0xFFe94560).withOpacity(0.5),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.visibility, size: 24),
-                          SizedBox(width: 12),
-                          Text(
-                            '役職を見る',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  SizedBox(
-                    width: double.infinity,
-                    height: 64,
-                    child: ElevatedButton(
-                      onPressed: isLast ? _startGame : _nextPlayer,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFe94560),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 8,
-                        shadowColor: const Color(0xFFe94560).withOpacity(0.5),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isLast ? 'ゲーム開始' : '次の人へ',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Icon(
-                            isLast ? Icons.play_arrow : Icons.arrow_forward,
-                            size: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                const SizedBox(width: 12),
+                Icon(
+                  isLast ? Icons.play_arrow : Icons.check_circle,
+                  size: 24,
+                ),
               ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

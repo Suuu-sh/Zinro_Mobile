@@ -49,10 +49,10 @@ class _ResultsScreenState extends State<ResultsScreen>
             ),
           ),
           assignedRoles: [
-            '神狼',
-            '観測神',
-            '守護神',
-            '霊媒神',
+            '神狼 -フェンリル-',
+            '知恵神 -ミーミル-',
+            '門番神 -ヘイムダル-',
+            '冥界神 -ヘル-',
             '普通神',
             '普通神'
           ],
