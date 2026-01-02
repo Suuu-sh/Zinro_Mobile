@@ -7,7 +7,7 @@ import 'results_screen.dart';
 
 enum GamePhase { discussion, nightAction, voting, dayEnd, gameOver }
 
-const String _roleFenrir = 'フェンリル';
+const String _roleFenrir = '神狼';
 const String _roleObserverGod = '観測神';
 const String _roleGuardianGod = '守護神';
 const String _roleMediumGod = '霊媒神';
@@ -336,7 +336,7 @@ class _GameScreenState extends State<GameScreen> {
       return true;
     }
     if (aliveFenrir >= aliveGods) {
-      _winner = '神狼陣営（フェンリル）の勝利';
+      _winner = '神狼陣営の勝利';
       return true;
     }
     return false;
@@ -361,7 +361,7 @@ class _GameScreenState extends State<GameScreen> {
       if (target == null) continue;
       suggestions.add(
         _WolfSuggestion(
-          proposer: 'フェンリル${_fenrirOrder(playerIndex)}',
+          proposer: '神狼${_fenrirOrder(playerIndex)}',
           targetName: _players[target].name,
         ),
       );
@@ -1230,7 +1230,7 @@ class _WolfSuggestionList extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isFinalDecider ? 'フェンリルの提案（参考）' : '先に選んだフェンリルの提案',
+            isFinalDecider ? '神狼の提案（参考）' : '先に選んだ神狼の提案',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,

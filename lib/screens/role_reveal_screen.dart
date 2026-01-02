@@ -61,7 +61,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
 
   List<String> _buildRoles(GameSettings settings) {
     final roles = <String>[];
-    roles.addAll(List.filled(settings.roles.fenrir, 'フェンリル'));
+    roles.addAll(List.filled(settings.roles.fenrir, '神狼'));
     roles.addAll(List.filled(settings.roles.observerGod, '観測神'));
     roles.addAll(List.filled(settings.roles.guardianGod, '守護神'));
     roles.addAll(List.filled(settings.roles.mediumGod, '霊媒神'));

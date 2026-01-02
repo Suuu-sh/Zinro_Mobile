@@ -49,7 +49,7 @@ class _ResultsScreenState extends State<ResultsScreen>
             ),
           ),
           assignedRoles: [
-            'フェンリル',
+            '神狼',
             '観測神',
             '守護神',
             '霊媒神',
