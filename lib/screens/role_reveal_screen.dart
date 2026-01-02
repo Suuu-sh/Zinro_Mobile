@@ -53,6 +53,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
             observerGod: 1,
             guardianGod: 1,
             mediumGod: 1,
+            atonementGod: 0,
             normalGod: 2,
           ),
         );
@@ -66,6 +67,7 @@ class _RoleRevealScreenState extends State<RoleRevealScreen>
     roles.addAll(List.filled(settings.roles.observerGod, '知恵神 -ミーミル-'));
     roles.addAll(List.filled(settings.roles.guardianGod, '門番神 -ヘイムダル-'));
     roles.addAll(List.filled(settings.roles.mediumGod, '冥界神 -ヘル-'));
+    roles.addAll(List.filled(settings.roles.atonementGod, '贖罪神 -イエス-'));
     roles.addAll(List.filled(settings.roles.normalGod, '普通神'));
     roles.shuffle(Random());
     return roles;

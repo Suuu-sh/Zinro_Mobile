@@ -61,6 +61,16 @@ class RoleDatabase {
     isEvil: false,
   );
 
+  static const atonementGod = RoleData(
+    name: '贖罪神 -イエス-',
+    emoji: '🕊️',
+    description: '贖罪を背負う神',
+    ability: '投票で処刑されると即座に勝利する。',
+    primaryColor: Color(0xFFF7C873),
+    secondaryColor: Color(0xFFE09E3E),
+    isEvil: false,
+  );
+
   static const normalGod = RoleData(
     name: '普通神',
     emoji: '⭐',
@@ -81,6 +91,8 @@ class RoleDatabase {
         return guardianGod;
       case '冥界神 -ヘル-':
         return mediumGod;
+      case '贖罪神 -イエス-':
+        return atonementGod;
       case '普通神':
         return normalGod;
       default:

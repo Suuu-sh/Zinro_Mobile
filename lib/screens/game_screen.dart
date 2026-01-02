@@ -11,6 +11,7 @@ const String _roleFenrir = '神狼 -フェンリル-';
 const String _roleObserverGod = '知恵神 -ミーミル-';
 const String _roleGuardianGod = '門番神 -ヘイムダル-';
 const String _roleMediumGod = '冥界神 -ヘル-';
+const String _roleAtonementGod = '贖罪神 -イエス-';
 const String _roleNormalGod = '普通神';
 
 class GameScreen extends StatefulWidget {
@@ -30,6 +31,7 @@ class _GameScreenState extends State<GameScreen> {
   GamePhase _phase = GamePhase.discussion;
   int _day = 1;
   bool _firstDayNoVote = true;
+  bool _atonementVictory = false;
 
   List<int> _nightOrder = [];
   int _nightIndex = 0;
@@ -67,6 +69,7 @@ class _GameScreenState extends State<GameScreen> {
           observerGod: 1,
           guardianGod: 1,
           mediumGod: 1,
+          atonementGod: 0,
           normalGod: 2,
         ),
       );
@@ -92,6 +95,7 @@ class _GameScreenState extends State<GameScreen> {
     roles.addAll(List.filled(settings.roles.observerGod, _roleObserverGod));
     roles.addAll(List.filled(settings.roles.guardianGod, _roleGuardianGod));
     roles.addAll(List.filled(settings.roles.mediumGod, _roleMediumGod));
+    roles.addAll(List.filled(settings.roles.atonementGod, _roleAtonementGod));
     roles.addAll(List.filled(settings.roles.normalGod, _roleNormalGod));
     roles.shuffle(Random());
     return roles;
@@ -332,23 +336,16 @@ class _GameScreenState extends State<GameScreen> {
     if (targetIndex != null && targetIndex != guardedPlayer) {
       final target = _players[targetIndex];
       if (target.alive) {
+        target.alive = false;
+        death = true;
+
         if (target.role == _roleObserverGod ||
             target.role == _roleGuardianGod ||
             target.role == _roleMediumGod) {
-          if (target.abilityActive) {
-            target.abilityActive = false;
-            death = false;
-            if (finalAttacker != null) {
-              final attacker = _players[finalAttacker];
-              _addStolenAbility(attacker, target.role, _day + 1);
-            }
-          } else {
-            target.alive = false;
-            death = true;
+          if (finalAttacker != null) {
+            final attacker = _players[finalAttacker];
+            _addStolenAbility(attacker, target.role, _day + 1);
           }
-        } else {
-          target.alive = false;
-          death = true;
         }
       }
     }
@@ -379,9 +376,16 @@ class _GameScreenState extends State<GameScreen> {
     final executed = _players[top.key];
     executed.alive = false;
     _lastExecution = '${executed.name} を処刑';
+    if (executed.role == _roleAtonementGod) {
+      _atonementVictory = true;
+      _winner = '贖罪神の勝利';
+    }
   }
 
   bool _checkWin() {
+    if (_atonementVictory) {
+      return true;
+    }
     final aliveFenrir =
         _players.where((p) => p.alive && p.role == _roleFenrir).length;
     final aliveGods =
@@ -438,12 +442,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   String _effectiveRoleLabel(_PlayerState target) {
-    if ((target.role == _roleObserverGod ||
-            target.role == _roleGuardianGod ||
-            target.role == _roleMediumGod) &&
-        !target.abilityActive) {
-      return _roleNormalGod;
-    }
     return target.role;
   }
 
@@ -829,6 +827,7 @@ class _SettingsSummary extends StatelessWidget {
               _RoleChip(emoji: '👁️', count: settings.roles.observerGod),
               _RoleChip(emoji: '🛡️', count: settings.roles.guardianGod),
               _RoleChip(emoji: '🔮', count: settings.roles.mediumGod),
+              _RoleChip(emoji: '🕊️', count: settings.roles.atonementGod),
               _RoleChip(emoji: '⭐', count: settings.roles.normalGod),
             ],
           ),
@@ -1134,14 +1133,9 @@ class _NightActionPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  (player.role == _roleObserverGod ||
-                              player.role == _roleGuardianGod ||
-                              player.role == _roleMediumGod) &&
-                          !player.abilityActive
-                      ? '能力喪失済み'
-                      : 'スマホを回して確認します。',
-                  style: const TextStyle(
+                const Text(
+                  'スマホを回して確認します。',
+                  style: TextStyle(
                     fontSize: 12,
                     color: Color(0xFF4A5A59),
                   ),

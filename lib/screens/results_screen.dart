@@ -45,6 +45,7 @@ class _ResultsScreenState extends State<ResultsScreen>
               observerGod: 1,
               guardianGod: 1,
               mediumGod: 1,
+              atonementGod: 0,
               normalGod: 2,
             ),
           ),
@@ -53,6 +54,7 @@ class _ResultsScreenState extends State<ResultsScreen>
             '知恵神 -ミーミル-',
             '門番神 -ヘイムダル-',
             '冥界神 -ヘル-',
+            '贖罪神 -イエス-',
             '普通神',
             '普通神'
           ],

@@ -4,6 +4,7 @@ class RoleSettings {
     required this.observerGod,
     required this.guardianGod,
     required this.mediumGod,
+    required this.atonementGod,
     required this.normalGod,
   });
 
@@ -11,16 +12,18 @@ class RoleSettings {
   final int observerGod;
   final int guardianGod;
   final int mediumGod;
+  final int atonementGod;
   final int normalGod;
 
   int get total =>
-      fenrir + observerGod + guardianGod + mediumGod + normalGod;
+      fenrir + observerGod + guardianGod + mediumGod + atonementGod + normalGod;
 
   RoleSettings copyWith({
     int? fenrir,
     int? observerGod,
     int? guardianGod,
     int? mediumGod,
+    int? atonementGod,
     int? normalGod,
   }) {
     return RoleSettings(
@@ -28,6 +31,7 @@ class RoleSettings {
       observerGod: observerGod ?? this.observerGod,
       guardianGod: guardianGod ?? this.guardianGod,
       mediumGod: mediumGod ?? this.mediumGod,
+      atonementGod: atonementGod ?? this.atonementGod,
       normalGod: normalGod ?? this.normalGod,
     );
   }

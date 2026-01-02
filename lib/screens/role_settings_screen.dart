@@ -26,6 +26,7 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
   late int _observerGod;
   late int _guardianGod;
   late int _mediumGod;
+  late int _atonementGod;
   late int _normalGod;
 
   @override
@@ -39,13 +40,20 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
     _observerGod = 1;
     _guardianGod = 1;
     _mediumGod = 1;
-    final assignedTotal = _fenrir + _observerGod + _guardianGod + _mediumGod;
+    _atonementGod = 0;
+    final assignedTotal =
+        _fenrir + _observerGod + _guardianGod + _mediumGod + _atonementGod;
     _normalGod = (_playerCount - assignedTotal).clamp(0, _playerCount).toInt();
     _initialized = true;
   }
 
   int get _total =>
-      _fenrir + _observerGod + _guardianGod + _mediumGod + _normalGod;
+      _fenrir +
+      _observerGod +
+      _guardianGod +
+      _mediumGod +
+      _atonementGod +
+      _normalGod;
 
   bool get _isValid => _total == _playerCount && _fenrir >= 1;
 
@@ -63,6 +71,9 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
           break;
         case 'medium':
           _mediumGod = (_mediumGod + delta).clamp(0, _playerCount).toInt();
+          break;
+        case 'atonement':
+          _atonementGod = (_atonementGod + delta).clamp(0, _playerCount).toInt();
           break;
         case 'normal':
           _normalGod = (_normalGod + delta).clamp(0, _playerCount).toInt();
@@ -191,6 +202,13 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
                       ),
                       const SizedBox(height: 12),
                       _RoleCard(
+                        roleData: RoleDatabase.atonementGod,
+                        count: _atonementGod,
+                        onMinus: () => _changeRole('atonement', -1),
+                        onPlus: () => _changeRole('atonement', 1),
+                      ),
+                      const SizedBox(height: 12),
+                      _RoleCard(
                         roleData: RoleDatabase.normalGod,
                         count: _normalGod,
                         onMinus: () => _changeRole('normal', -1),
@@ -212,6 +230,7 @@ class _RoleSettingsScreenState extends State<RoleSettingsScreen> {
                               observerGod: _observerGod,
                               guardianGod: _guardianGod,
                               mediumGod: _mediumGod,
+                              atonementGod: _atonementGod,
                               normalGod: _normalGod,
                             );
                             Navigator.of(context).pushNamed(
@@ -273,6 +292,9 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final teamLabel = _teamLabel(roleData);
+    final teamColor = _teamColor(roleData);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -312,13 +334,38 @@ class _RoleCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  roleData.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        roleData.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: teamColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: teamColor.withOpacity(0.6)),
+                      ),
+                      child: Text(
+                        teamLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: teamColor,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -368,5 +415,19 @@ class _RoleCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _teamLabel(RoleData data) {
+    if (data == RoleDatabase.atonementGod) {
+      return 'Special team';
+    }
+    return data.isEvil ? 'Fenrir team' : 'God team';
+  }
+
+  Color _teamColor(RoleData data) {
+    if (data == RoleDatabase.atonementGod) {
+      return const Color(0xFFF7C873);
+    }
+    return data.isEvil ? const Color(0xFFe94560) : const Color(0xFF4CAF50);
   }
 }
